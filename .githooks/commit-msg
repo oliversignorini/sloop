@@ -1,13 +1,15 @@
 #!/bin/sh
 # commit-msg: checks a commit's first line (and a breaking change's trailer)
-# against the commit standard
-# (os-software-factory docs/04-commits-and-prs.md §1). POSIX sh only, so it
-# runs in repos with no Node. Fast feedback, not the authority: the full rules
-# live in `factory pr lint`. Installed by `factory conventions install`.
-#
-# TYPES and MAX are tested against chair/cli/conventions/commit.ts.
-TYPES="red feat fix test refactor perf docs evidence plan build chore revert"
+# against Conventional Commits. POSIX sh only, so it runs in repos with no
+# Node. Deployed by chezmoi to ~/.config/git/hooks (global core.hooksPath).
+TYPES="feat fix docs style refactor perf test build ci chore revert"
 MAX=72
+
+# Bytes, not the locale's characters: Git for Windows' grep and sed reject an
+# astral character (an emoji) in a UTF-8 locale, so `.` would not match it.
+# The rules are ASCII; the length is counted in characters below.
+LC_ALL=C
+export LC_ALL
 
 # The first line that is neither blank nor one of git's comment lines.
 line=$(sed -n '/^#/d; s/\r$//; /^$/d; p' "$1" | sed -n '1p')
@@ -15,14 +17,14 @@ line=$(sed -n '/^#/d; s/\r$//; /^$/d; p' "$1" | sed -n '1p')
 # Exempt: merge commits and fixup!/squash! on an unmerged branch.
 if printf '%s\n' "$line" | grep -Eq '^Merge (pull request|branch|remote-tracking branch|tag|commit|main|beta|[^ ]+ into) '; then exit 0; fi
 if printf '%s\n' "$line" | grep -Eq '^(fixup|squash|amend)! '; then exit 0; fi
+if printf '%s\n' "$line" | grep -Eq '^Revert "'; then exit 0; fi
 
 problems=""
 add() { problems="$problems
   - $1"; }
 
-# Characters, not bytes: ${#line} counts bytes under dash or a C locale.
-# Dropping UTF-8 continuation bytes (0x80-0xBF) leaves one byte per character.
-len=$(printf '%s' "$line" | LC_ALL=C tr -d '\200-\277' | wc -c | tr -d ' ')
+# Characters, not bytes: drop UTF-8 continuation bytes (0x80-0xBF).
+len=$(printf '%s' "$line" | tr -d '\200-\277' | wc -c | tr -d ' ')
 if [ "$len" -gt "$MAX" ]; then
   add "the first line is $len characters; at most $MAX"
 fi
@@ -35,8 +37,8 @@ if printf '%s\n' "$line" | grep -Eq '^[A-Za-z]+(\([^)]*\))?!?: [^ ].*$'; then
   esac
   if printf '%s\n' "$line" | grep -Eq '^[A-Za-z]+\('; then
     scope=$(printf '%s\n' "$line" | sed -E 's/^[A-Za-z]+\(([^)]*)\).*/\1/')
-    if ! printf '%s\n' "$scope" | grep -Eq '^([A-Z][A-Za-z0-9]*([-_.][A-Za-z0-9]+)*|[a-z][a-z0-9]*(-[a-z0-9]+)*)$'; then
-      add "scope ($scope) is neither a slice id (C10-02) nor a lowercase area (review-loop)"
+    if ! printf '%s\n' "$scope" | grep -Eq '^[a-z0-9]+([-_./][a-z0-9]+)*$'; then
+      add "scope ($scope) is not a lowercase area (review-loop)"
     fi
   fi
   subject=$(printf '%s\n' "$line" | sed -E 's/^[A-Za-z]+(\([^)]*\))?!?: //')
@@ -58,8 +60,8 @@ commit-msg: this commit message does not follow the commit standard:$problems
 Rule: <type>(<scope>)<!>: <subject>, first line at most $MAX characters,
       imperative, lower case first word, no trailing full stop.
 Types: $TYPES
-Scope: the slice id as the contract spells it (C10-02), or a lowercase area.
-Example: fix(C10-02): raise a stall when the attempt's terminal is gone
-Standard: docs/04-commits-and-prs.md (os-software-factory)
+Scope: optional, a lowercase area (review-loop).
+Example: fix(auth): refuse an expired session token
+Standard: https://www.conventionalcommits.org
 MSG
 exit 1
