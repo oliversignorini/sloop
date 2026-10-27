@@ -1,13 +1,14 @@
 # Contributing
 
-See [`AGENTS.md`](./AGENTS.md) for the service-layer, API-first and
-software-factory conventions this repo follows.
+See [`AGENTS.md`](./AGENTS.md) for the service-layer and API-first
+conventions this repo follows.
 
 ## Dev setup
 
 ```bash
 git clone <repo-url>
-cd nextjs-template
+cd <repo>
+cp .env.local.example .env.local
 pnpm bootstrap
 pnpm dev
 ```
@@ -28,4 +29,4 @@ pnpm dev
 - [ ] `pnpm test:unit`
 - [ ] `pnpm test:db` (if `supabase/migrations/` changed)
 - [ ] `pnpm api:check` (if `app/api/v1/**` or a domain's `schemas.ts` changed)
-- [ ] `pnpm e2e:baseline`
+- [ ] `pnpm test:e2e`
