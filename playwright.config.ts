@@ -1,5 +1,13 @@
 import { defineConfig, devices } from '@playwright/test'
 
+// The specs read NEXT_PUBLIC_SUPABASE_* / E2E_* straight from .env.local,
+// the same file `next dev` loads.
+try {
+  process.loadEnvFile('.env.local')
+} catch {
+  // no .env.local yet: the specs' own missing-env errors say what to do
+}
+
 const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`
 
 export default defineConfig({
@@ -15,6 +23,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  // The factory's scripts/factory/factory.mjs starts/stops dev itself
-  // (per-slot ports); Playwright never launches its own webServer.
+  webServer: {
+    command: 'pnpm dev',
+    url: baseURL,
+    reuseExistingServer: true,
+  },
 })

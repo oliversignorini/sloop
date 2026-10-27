@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Next + Supabase starter',
-  description: 'software-factory next-supabase-vercel profile skeleton',
+  description: 'Next.js + Supabase starter skeleton',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

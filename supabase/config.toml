@@ -161,11 +161,11 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://127.0.0.1:3000"
+site_url = "http://localhost:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = ["http://localhost:3000", "http://localhost:3000/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -378,9 +378,8 @@ authorization_url_path = "/oauth/consent"
 allow_dynamic_registration = false
 
 [edge_runtime]
-# This profile has no supabase/functions/ and doesn't use Edge Functions;
-# disabled to save RAM (real constraint on shared factory hosts) and
-# because its inspector_port isn't slot-remapped.
+# This skeleton has no supabase/functions/ and doesn't use Edge Functions;
+# disabled to save RAM.
 enabled = false
 # Supported request policies: `oneshot`, `per_worker`.
 # `per_worker` (default) — enables hot reload during local development.
@@ -395,10 +394,8 @@ deno_version = 2
 # secret_key = "env(SECRET_VALUE)"
 
 [analytics]
-# Logflare isn't part of this profile's contract (Postgres/Auth/Mailpit
-# only) and its port isn't slot-remapped by scripts/factory/factory.mjs,
-# so it would collide across slots if enabled. It also costs meaningful
-# RAM that this profile doesn't need.
+# Logflare isn't part of this skeleton (Postgres/Auth/Mailpit only) and
+# costs meaningful RAM.
 enabled = false
 port = 54327
 # Configure one of the supported backends: `postgres`, `bigquery`.
