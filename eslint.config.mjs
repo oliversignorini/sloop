@@ -6,8 +6,8 @@ import { plugin as shadcn } from '@shadcn/lint'
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'openapi.json', '.factory/**']),
-  // Design-system guard (software-factory profile): app code composes
+  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'openapi.json']),
+  // Design-system guard: app code composes
   // components/ui + the theme tokens in app/globals.css instead of
   // restyling them or reaching for raw colours / arbitrary values.
   // components/ui itself defines the primitives, so it is exempt.

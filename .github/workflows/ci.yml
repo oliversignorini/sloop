@@ -1,3 +1,6 @@
+# Cheap by design: lint, typecheck, unit tests and the OpenAPI drift check.
+# pgTAP, Playwright and the design check need Docker/browsers and run
+# locally before a PR (see AGENTS.md > Commands).
 name: CI
 
 on:
@@ -5,12 +8,10 @@ on:
     branches: [main]
   pull_request:
 
-env:
-  FACTORY_SLOT: '0'
-
 jobs:
   ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -37,25 +38,3 @@ jobs:
 
       - name: API contract drift
         run: pnpm api:check
-
-      - name: Start Supabase + reset DB (migrations + seed)
-        run: pnpm env:reset
-
-      - name: Database tests (pgTAP)
-        run: pnpm test:db
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Build
-        run: pnpm build
-
-      - name: E2E baseline
-        run: pnpm e2e:baseline
-
-      - name: Design check
-        run: pnpm design:check
-
-      - name: Stop Supabase
-        if: always()
-        run: pnpm env:down

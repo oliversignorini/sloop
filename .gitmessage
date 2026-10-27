@@ -1,4 +1,3 @@
-
 # <type>(<scope>)<!>: <subject>
 #   At most 72 characters. Imperative, lower case first word, no full stop.
 #   No (#123) in the subject: issues go in the trailers.
@@ -9,9 +8,8 @@
 # Refs: #164
 # Co-Authored-By: Claude <model> <noreply@anthropic.com>
 #
-# Types: red feat fix test refactor perf docs evidence plan build chore revert
-# Scope: the slice id as the contract spells it (C10-02), or a lowercase
-#        area (review-loop). Optional outside slice work.
+# Types: feat fix docs style refactor perf test build ci chore revert
+# Scope: optional, a lowercase area (review-loop).
 # Breaking change: `!` after the scope and a `BREAKING CHANGE: <what breaks,
 #        how to migrate>` trailer.
-# Standard: docs/04-commits-and-prs.md (os-software-factory)
+# Standard: https://www.conventionalcommits.org

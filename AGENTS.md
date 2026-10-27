@@ -49,8 +49,8 @@ versioned HTTP API always has parity with the UI.
   (an architecture-rule call: that would put the create path's control
   flow in a DB function, which is business logic, not infra); the tradeoff
   is a request that crashes between the note insert and the finalize check
-  can leave one uncompensated orphan note, an
-  accepted residual risk for a profile skeleton. `idempotency_keys` has no
+  can leave one uncompensated orphan note, an accepted residual risk for a
+  starter skeleton. `idempotency_keys` has no
   TTL/cleanup yet (a documented follow-up, not a correctness bug).
 
 ### Adding a new API resource
@@ -65,7 +65,7 @@ versioned HTTP API always has parity with the UI.
    the top, calls the service function.
 5. `pnpm api:generate` to write `openapi.json`, commit it.
 6. A Server Component/Action calling the same service function (API-first
-   parity), a pgTAP test for the table's RLS, and an `e2e:baseline` case.
+   parity), a pgTAP test for the table's RLS, and an e2e spec.
 
 ## Per-domain file shape
 
@@ -76,7 +76,7 @@ lib/<domain>/
 └── service.test.ts  # DB-free unit tests (fake/mock the client)
 ```
 
-`lib/notes/` is the reference slice (the walking-skeleton demo resource) --
+`lib/notes/` is the reference domain (the walking-skeleton demo resource) --
 copy its shape, not its content.
 
 ## Data & access control
@@ -89,7 +89,7 @@ copy its shape, not its content.
   `raw_user_meta_data`.** `user_metadata` (the `data` field of a public
   `signUp()`/`signInWithOtp()` call) is client-controlled with only the anon
   key -- trusting it for role/permission decisions is a privilege-escalation
-  hole (this profile's B-1 finding, round 1). `app_metadata` can only be set
+  hole. `app_metadata` can only be set
   by the service role (the Admin API), which is what `scripts/supabase/seed.ts`
   uses. `handle_new_user()` in `supabase/migrations/20260926100000_profiles.sql`
   reads `raw_app_meta_data ->> 'role'`; keep it that way, and keep the pgTAP
@@ -111,70 +111,42 @@ copy its shape, not its content.
   for existing data. Supabase migrations are forward-only here (no `down`
   file), so get the `up` right the first time.
 - `supabase/config.toml` only enables Postgres, Auth and Mailpit (`api`,
-  `db`, `auth`, `local_smtp`, `studio`) -- this profile's contract.
-  `storage`, `realtime`, `analytics` and `edge_runtime` are disabled: they
-  aren't used by the demo resource, cost real RAM on a shared factory host,
-  and (analytics/edge_runtime) have ports `scripts/factory/factory.mjs`
-  doesn't remap per slot. Re-enable per-app if a feature needs one, and add
-  its port(s) to `BASE_PORTS` in `factory.mjs` first if you do.
-- **Postgres image pin:** `factory.mjs` writes `postgres-version` (currently
-  `17.6.1.172`) into every slot's satellite `.temp/` dir, which is what the
-  Supabase CLI reads to pick the Postgres patch version -- it does not rely
-  on the CLI's own default resolution for `major_version = 17`. This exists
-  because `17.6.1.171`'s image had a corrupted local unpack on the factory
-  host (`docker-entrypoint.sh`/`gosu` were 0 bytes, reproducible
-  independently of this repo, not fixed by `docker rmi` + re-pull -- Docker
-  relinked the same corrupted blob by digest). Bump `PINNED_POSTGRES_VERSION`
-  in `factory.mjs` if a newer patch is verified good, or drop the pin
-  entirely once the CLI's own default is confirmed >= a known-good version.
+  `db`, `auth`, `local_smtp`, `studio`). `storage`, `realtime`, `analytics`
+  and `edge_runtime` are disabled: the demo resource doesn't use them and
+  they cost real RAM. Re-enable per-app if a feature needs one.
 - **`env:up` flakiness on Windows:** `supabase start` spawns ~13 containers
-  through several nested process spawns (pnpm -> node -> the CLI binary ->
-  docker) and intermittently fails a cold start with `EUNKNOWN: unknown
-error, uv_spawn`, even though the compose stack itself is fine and a
-  second attempt succeeds unchanged. `factory.mjs`'s `startWithRetry()`
-  retries up to 3 times before treating it as a real failure -- this is why
-  `env:up`/`env:reset` can take a couple of attempts' worth of time on a
-  cold slot.
+  and intermittently fails a cold start with `EUNKNOWN: unknown error,
+  uv_spawn`, even though the compose stack itself is fine and a second
+  attempt succeeds unchanged. Re-run `pnpm env:up` before treating it as a
+  real failure.
 
-## Software-factory profile (`next-supabase-vercel`)
-
-This repo is the seed for the `next-supabase-vercel` profile of the software
-factory. Agents working in a factory worktree use these commands, never the
-raw ones, because every command is scoped to the worktree's `FACTORY_SLOT`.
+## Commands
 
 | Command                    | What it does                                                                  |
 | -------------------------- | ----------------------------------------------------------------------------- |
-| `pnpm bootstrap`           | Install deps, bring up this slot's Supabase stack, migrate + seed             |
-| `pnpm env:up` / `env:down` | Start / stop this slot's local Supabase stack (`.factory/supabase-s<slot>/`)  |
-| `pnpm env:reset`           | Fresh DB: stop, start, `supabase db reset`, seed demo users + rows, gen types |
-| `pnpm dev:slot`            | `next dev` on this slot's port                                                |
-| `pnpm health`              | Exit 0 when `GET /api/health` on this slot returns 200 with `{db:true}`       |
+| `pnpm bootstrap`           | Install deps, bring up local Supabase, migrate + seed                        |
+| `pnpm env:up` / `env:down` | Start / stop the local Supabase stack                                        |
+| `pnpm env:reset`           | Fresh DB: start, `supabase db reset`, seed demo users + rows, gen types       |
+| `pnpm dev`                 | `next dev`                                                                    |
 | `pnpm lint`                | ESLint (incl. `@shadcn/lint`) + Prettier check                                |
 | `pnpm typecheck`           | `tsc --noEmit`                                                                |
 | `pnpm test:unit`           | Vitest, DB-free (mocked Supabase clients)                                     |
 | `pnpm test:db`             | `supabase test db` -- pgTAP: RLS-enabled + per-role access on every table     |
-| `pnpm e2e`                 | Playwright against this slot (starts `dev:slot` if it isn't running)          |
-| `pnpm e2e:baseline`        | The e2e specs CI runs: skeleton, API-only, magic-link, pagination             |
+| `pnpm test:e2e`            | Playwright (starts `pnpm dev` itself if nothing is serving)                   |
 | `pnpm design:check`        | impeccable design detector over `app` and `components`                        |
 | `pnpm api:check`           | Regenerate `openapi.json` and fail on drift                                   |
 
-**Slots.** `FACTORY_SLOT` (0-9) is set by the factory chair per worktree.
-Every port is its default + `slot*100` (`node scripts/factory/factory.mjs
-ports`). Supabase's `project_id` becomes `nextjs-template-s<slot>` and the
-whole stack lives in a per-slot satellite dir (`.factory/supabase-s<slot>/`,
-gitignored) so two slots never share a container, volume or port. The
-generated `.env.local` carries a `managed-by` header; never hand-edit it --
-move it aside and re-run `pnpm env:up` if you need to.
+Run them in this order before opening a PR: `lint` -> `typecheck` ->
+`test:unit` -> `api:check` -> `test:db` -> `test:e2e`.
 
-**Factory workflow.** isolate (`FACTORY_SLOT` + `pnpm env:up`) -> build the
-slice -> checks (`lint` -> `typecheck` -> `test:unit` -> `api:check` ->
-`test:db` -> `e2e:baseline`, in that order -- the first failure stops the
-run) -> proof (evidence in `findings/_evidence/`) -> PR. Never work on `main`
-directly; never skip a hook.
+**Environment.** `.env.local` is not committed: copy `.env.local.example`
+and fill `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` from
+`pnpm exec supabase status -o env` after the first `pnpm env:up`. `pnpm seed`
+and Playwright both read that file.
 
 **Auth redirects.** `site_url`/`additional_redirect_urls` in
-`supabase/config.toml` are rendered per-slot to match
-`NEXT_PUBLIC_APP_URL`'s host exactly (`localhost`, not `127.0.0.1` --
+`supabase/config.toml` must match `NEXT_PUBLIC_APP_URL`'s host exactly
+(`localhost`, not `127.0.0.1` --
 browsers treat them as different origins, which silently breaks the magic
 link's PKCE exchange). `lib/safe-redirect.ts`'s `safeNext()` is the only
 way a `next`/`redirect` query or form value may reach a `Response.redirect`
@@ -194,16 +166,9 @@ colours, arbitrary values, inline styles and unknown classes. If a design
 needs something no variant provides, add the variant in `components/ui`
 (`npx shadcn add <name>`), don't work around the lint rule.
 
-**Findings.** Audit findings (review, Playwright/visual, UX, design
-detector) are Markdown files under `findings/<type>/NNNN-<slug>.md` with
-front matter `type, severity (blocking|major|minor), status
-(open|fixed|wontfix), slice, source, evidence`. Evidence goes in
-`findings/_evidence/`.
-
-**Never**: edit `main` directly, skip a hook, hand-edit `.env.local` or
-`types/database.ts`, add business logic to a route handler/Server
-Action/Postgres function instead of a `service.ts`, or `db reset` from
-outside your own slot's satellite dir.
+**Never**: edit `main` directly, skip a hook, hand-edit `types/database.ts`,
+or add business logic to a route handler/Server Action/Postgres function
+instead of a `service.ts`.
 
 ## Skills
 
