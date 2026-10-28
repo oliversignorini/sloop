@@ -70,7 +70,7 @@
     "supabase": "^2.67.1",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.19.2",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vitest": "^4.0.18"
   }
 }
