@@ -115,26 +115,26 @@ copy its shape, not its content.
   and `edge_runtime` are disabled: the demo resource doesn't use them and
   they cost real RAM. Re-enable per-app if a feature needs one.
 - **`env:up` flakiness on Windows:** `supabase start` spawns ~13 containers
-  and intermittently fails a cold start with `EUNKNOWN: unknown error,
-  uv_spawn`, even though the compose stack itself is fine and a second
+  and intermittently fails a cold start with
+  `EUNKNOWN: unknown error, uv_spawn`, even though the compose stack itself is fine and a second
   attempt succeeds unchanged. Re-run `pnpm env:up` before treating it as a
   real failure.
 
 ## Commands
 
-| Command                    | What it does                                                                  |
-| -------------------------- | ----------------------------------------------------------------------------- |
-| `pnpm bootstrap`           | Install deps, bring up local Supabase, migrate + seed                        |
-| `pnpm env:up` / `env:down` | Start / stop the local Supabase stack                                        |
-| `pnpm env:reset`           | Fresh DB: start, `supabase db reset`, seed demo users + rows, gen types       |
-| `pnpm dev`                 | `next dev`                                                                    |
-| `pnpm lint`                | ESLint (incl. `@shadcn/lint`) + Prettier check                                |
-| `pnpm typecheck`           | `tsc --noEmit`                                                                |
-| `pnpm test:unit`           | Vitest, DB-free (mocked Supabase clients)                                     |
-| `pnpm test:db`             | `supabase test db` -- pgTAP: RLS-enabled + per-role access on every table     |
-| `pnpm test:e2e`            | Playwright (starts `pnpm dev` itself if nothing is serving)                   |
-| `pnpm design:check`        | impeccable design detector over `app` and `components`                        |
-| `pnpm api:check`           | Regenerate `openapi.json` and fail on drift                                   |
+| Command                    | What it does                                                              |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `pnpm bootstrap`           | Install deps, bring up local Supabase, migrate + seed                     |
+| `pnpm env:up` / `env:down` | Start / stop the local Supabase stack                                     |
+| `pnpm env:reset`           | Fresh DB: start, `supabase db reset`, seed demo users + rows, gen types   |
+| `pnpm dev`                 | `next dev`                                                                |
+| `pnpm lint`                | ESLint (incl. `@shadcn/lint`) + Prettier check                            |
+| `pnpm typecheck`           | `tsc --noEmit`                                                            |
+| `pnpm test:unit`           | Vitest, DB-free (mocked Supabase clients)                                 |
+| `pnpm test:db`             | `supabase test db` -- pgTAP: RLS-enabled + per-role access on every table |
+| `pnpm test:e2e`            | Playwright (starts `pnpm dev` itself if nothing is serving)               |
+| `pnpm design:check`        | impeccable design detector over `app` and `components`                    |
+| `pnpm api:check`           | Regenerate `openapi.json` and fail on drift                               |
 
 Run them in this order before opening a PR: `lint` -> `typecheck` ->
 `test:unit` -> `api:check` -> `test:db` -> `test:e2e`.
